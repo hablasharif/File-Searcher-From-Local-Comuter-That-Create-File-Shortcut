@@ -1,0 +1,89 @@
+import os
+import winshell
+from tqdm import tqdm
+
+# Define patterns to ignore based on keywords and specific paths
+ignore_keywords = [
+    r"\\App\\",
+    r"\\Data\\",
+    r"\\extensions\\",
+    r"site-packages",
+    r"\\Photoshop\\",
+    r"C:\\\$Recycle.Bin"
+]
+
+# Additional specific paths to ignore
+specific_ignore_paths = [
+    r"C:\Intel",
+    r"C:\Users\style\Desktop\Sharif - Chrome",
+    r"C:\Users\style\node_modules",
+    r"C:\Users\style\Downloads\Service tool v3400",
+    r"C:\$WinREAgent\Backup",
+    r"C:\Users\style\.VirtualBox",
+    r"C:\Users\style\.wdm",
+    r"C:\Users\style\path",
+    r"C:\Users\style\.vscode",
+    r"C:\Users\style\Desktop\Photoshop CC 2015 16.1.2 Portable",
+    r"C:\MinGW",
+    r"C:\Program Files",
+    r"C:\Program Files (x86)",
+    r"C:\$Recycle.Bin\S-1-5-21-864967976-928235426-1803966114-1001",
+    r"C:\Users\style\AppData\Local\Google\Chrome\User Data",
+    r"C:\Users\style\.vscode\extensions\ms-python.debugpy-2024.6.0-win32-x64\bundled\libs\debugpy\_vendored\pydevd\pydev_sitecustomize",
+    r"C:\Windows",
+    os.path.join(os.getenv('USERPROFILE'), 'AppData')
+]
+
+# Folder to save shortcuts
+shortcut_folder = r"C:\Users\style\Desktop\Sharif pptx documents"
+os.makedirs(shortcut_folder, exist_ok=True)
+
+def is_ignored_path(path):
+    """
+    Check if a path should be ignored based on predefined keywords and specific paths.
+    """
+    # Check against specific ignore paths
+    for ignore_path in specific_ignore_paths:
+        if path.startswith(ignore_path):
+            return True
+    # Check against ignore keywords
+    for keyword in ignore_keywords:
+        if keyword in path:
+            return True
+    return False
+
+def create_shortcut(file_path, shortcut_path):
+    """
+    Create a shortcut for a given file path.
+    """
+    try:
+        winshell.CreateShortcut(
+            Path=shortcut_path,
+            Target=file_path,
+            Icon=(file_path, 0),
+            Description="Shortcut to " + file_path
+        )
+    except Exception as e:
+        print(f"Failed to create shortcut for {file_path}. Error: {e}")
+
+def search_and_create_shortcuts(root_dir, file_extension=".pptx"):
+    """
+    Search for files with the specified extension and create shortcuts.
+    """
+    for root, dirs, files in tqdm(os.walk(root_dir), desc="Searching for files", unit="folder"):
+        if is_ignored_path(root):
+            dirs[:] = []  # Don't walk into subdirectories of ignored paths
+            continue
+        
+        for file in files:
+            if file.endswith(file_extension):
+                file_path = os.path.join(root, file)
+                shortcut_path = os.path.join(shortcut_folder, file + '.lnk')
+                create_shortcut(file_path, shortcut_path)
+
+if __name__ == "__main__":
+    try:
+        search_and_create_shortcuts('C:\\')
+        print("Shortcuts creation completed.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
